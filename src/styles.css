@@ -105,7 +105,7 @@ a { transition: color 180ms ease, background-color 180ms ease, border-color 180m
 .device-laptop { border: 1px solid color-mix(in oklab, var(--primary) 45%, var(--border)); border-radius: 14px; padding: 8px; background: color-mix(in oklab, var(--background) 82%, var(--secondary)); box-shadow: 0 30px 70px color-mix(in oklab, var(--primary) 22%, transparent); }
 .device-screen { position: relative; aspect-ratio: 16 / 9.6; overflow: hidden; border-radius: 8px; }
 .device-screen img { filter: saturate(.9) brightness(.8); }
-.device-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 1.1rem; background: linear-gradient(90deg, color-mix(in oklab, var(--background) 88%, transparent) 8%, transparent 62%); }
+.device-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding: 1.1rem; background: linear-gradient(90deg, color-mix(in oklab, var(--background) 88%, transparent) 8%, transparent 62%); }
 .device-stats { position: absolute; inset-inline: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); background: color-mix(in oklab, var(--background) 84%, transparent); border-top: 1px solid var(--border); backdrop-filter: blur(6px); }
 .device-stats > div { padding: .5rem .6rem; text-align: center; }
 .device-stats > div + div { border-left: 1px solid var(--border); }
