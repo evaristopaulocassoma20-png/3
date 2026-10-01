@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   BadgeCheck,
@@ -98,7 +99,7 @@ function EventProPage() {
           </a>
           <nav className="hidden items-center gap-8 text-sm font-medium lg:flex" aria-label="Navegação principal">
             <a className="nav-link active" href="#inicio">Início</a>
-            <a className="nav-link" href="#funcionalidades">Funcionalidades</a>
+            <Link className="nav-link" to="/funcionalidades">Funcionalidades</Link>
             <a className="nav-link" href="#como-funciona">Planos</a>
             <a className="nav-link" href="#eventos">Exemplos</a>
             <a className="nav-link" href="#sobre">Sobre</a>
@@ -138,7 +139,7 @@ function EventProPage() {
             <p className="section-kicker">Por que escolher a EventPro?</p>
             <h2 className="section-title mt-3">Tudo o que você precisa<br />em um só lugar.</h2>
             <p className="mt-5 max-w-md text-sm leading-6 text-copy">Nossa plataforma oferece todas as ferramentas que você precisa para organizar eventos de forma simples, segura e profissional.</p>
-            <a href="#como-funciona" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">Conheça todas as funcionalidades <ArrowRight size={16} /></a>
+            <Link to="/funcionalidades" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">Conheça todas as funcionalidades <ArrowRight size={16} /></Link>
           </div>
           <div className="grid gap-x-8 gap-y-9 sm:grid-cols-2 xl:grid-cols-3">
             {features.map(({ icon: Icon, title, text }) => (
