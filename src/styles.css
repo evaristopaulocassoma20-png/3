@@ -162,3 +162,7 @@ a { transition: color 180ms ease, background-color 180ms ease, border-color 180m
 }
 
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition-duration: 0.01ms !important; } }
+.sobre-stage { position: relative; overflow: hidden; border-radius: 1.5rem; border: 1px solid var(--color-border); aspect-ratio: 5/3; box-shadow: 0 0 60px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+.sobre-stage-text { position: absolute; left: 8%; top: 30%; font-size: clamp(1rem, 2.2vw, 1.6rem); font-weight: 800; line-height: 1.15; background: color-mix(in oklab, var(--color-background) 55%, transparent); padding: .75rem 1rem; border-radius: .75rem; }
+.team-card { overflow: hidden; border-radius: 0.9rem; border: 1px solid var(--color-border); background: var(--color-card); transition: border-color .2s, transform .2s; }
+.team-card:hover { border-color: var(--color-primary); transform: translateY(-3px); }
