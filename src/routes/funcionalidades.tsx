@@ -129,7 +129,7 @@ function FuncionalidadesPage() {
           <nav className="hidden items-center gap-8 text-sm font-medium lg:flex" aria-label="Navegação principal">
             <Link className="nav-link" to="/">Início</Link>
             <span className="nav-link active">Funcionalidades</span>
-            <a className="nav-link" href="/#como-funciona">Planos</a>
+            <Link className="nav-link" to="/planos">Planos</Link>
             <a className="nav-link" href="/#eventos">Exemplos</a>
             <a className="nav-link" href="/#sobre">Sobre</a>
             <a className="nav-link" href="/#contacto">Contacto</a>

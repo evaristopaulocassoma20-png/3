@@ -119,8 +119,36 @@ a { transition: color 180ms ease, background-color 180ms ease, border-color 180m
 .donut-chart { display: grid; width: 72px; height: 72px; place-items: center; border-radius: 999px; background: conic-gradient(var(--primary) 0 78%, color-mix(in oklab, var(--primary) 18%, transparent) 78% 100%); }
 .donut-chart span { display: grid; width: 50px; height: 50px; place-items: center; border-radius: 999px; background: var(--background); font-size: .72rem; font-weight: 800; }
 
+/* ===== Planos page ===== */
+.plan-hero-note { position: absolute; top: -8px; right: 118px; z-index: 2; padding: .7rem .9rem; border: 1px solid color-mix(in oklab, var(--primary) 50%, var(--border)); border-radius: var(--radius); background: color-mix(in oklab, var(--primary) 16%, var(--background)); color: var(--foreground); font-size: .68rem; font-weight: 700; line-height: 1.35; text-align: center; box-shadow: 0 14px 34px color-mix(in oklab, var(--primary) 22%, transparent); }
+.price-card { position: relative; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: linear-gradient(180deg, color-mix(in oklab, var(--card) 88%, transparent), color-mix(in oklab, var(--background) 60%, transparent)); transition: border-color 180ms ease, transform 180ms ease; }
+.price-card:hover { border-color: color-mix(in oklab, var(--primary) 70%, transparent); transform: translateY(-3px); }
+.price-card-featured { border: 1.5px solid var(--primary); box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 45%, transparent), 0 24px 60px color-mix(in oklab, var(--primary) 24%, transparent); background: linear-gradient(180deg, color-mix(in oklab, var(--primary) 10%, var(--card)), color-mix(in oklab, var(--background) 55%, transparent)); }
+.plan-badge { position: absolute; top: 14px; right: 0; display: inline-flex; align-items: center; gap: .4rem; border-radius: 6px 0 0 6px; background: var(--primary); padding: .35rem .8rem; color: var(--primary-foreground); font-size: .62rem; font-weight: 800; box-shadow: 0 8px 22px color-mix(in oklab, var(--primary) 45%, transparent); }
+.compare-table { border-collapse: collapse; text-align: center; }
+.compare-table thead th { border-bottom: 1px solid var(--border); padding: .85rem 1rem; font-size: .72rem; font-weight: 800; color: var(--foreground); }
+.compare-table thead th:first-child { text-align: left; }
+.compare-table tbody th { text-align: left; padding: .8rem 1rem; font-size: .74rem; font-weight: 600; color: var(--copy); }
+.compare-table tbody th::before { content: ""; display: inline-block; width: 26px; height: 1px; margin-right: .6rem; vertical-align: middle; background: linear-gradient(90deg, var(--primary), transparent); }
+.compare-table tbody td { width: 90px; padding: .8rem 1rem; }
+.compare-table tbody tr + tr { border-top: 1px solid color-mix(in oklab, var(--border) 55%, transparent); }
+.faq-photo-card { position: relative; overflow: hidden; border-radius: var(--radius); border: 1px solid var(--border); min-height: 380px; }
+.faq-photo-card img { filter: saturate(.85) brightness(.72); }
+.faq-photo-overlay { position: absolute; inset: 0; display: flex; align-items: flex-end; padding: 1.1rem; background: linear-gradient(180deg, transparent 30%, color-mix(in oklab, var(--background) 82%, transparent) 100%); }
+.faq-photo-box { display: flex; gap: .9rem; border: 1px solid var(--border); border-radius: var(--radius); background: color-mix(in oklab, var(--background) 86%, transparent); backdrop-filter: blur(8px); padding: 1rem; }
+.faq-item { border: 1px solid var(--border); border-radius: var(--radius); background: color-mix(in oklab, var(--card) 75%, transparent); }
+.faq-item[open] { border-color: color-mix(in oklab, var(--primary) 60%, transparent); }
+.faq-item summary { display: flex; cursor: pointer; align-items: center; justify-content: space-between; gap: 1rem; padding: .95rem 1.15rem; font-size: .82rem; font-weight: 700; color: var(--foreground); list-style: none; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-plus { position: relative; flex: none; width: 14px; height: 14px; }
+.faq-plus::before, .faq-plus::after { content: ""; position: absolute; inset: 0; margin: auto; background: var(--primary); border-radius: 2px; transition: transform 180ms ease; }
+.faq-plus::before { width: 14px; height: 2px; }
+.faq-plus::after { width: 2px; height: 14px; }
+.faq-item[open] .faq-plus::after { transform: rotate(90deg); }
+.faq-answer { margin: 0; padding: 0 1.15rem 1rem; font-size: .78rem; line-height: 1.6; color: var(--copy); }
+
 @media (max-width: 700px) {
-  .device-phone { right: 4px; bottom: -18px; }
+  .plan-hero-note { display: none; }
 }
 
 @media (min-width: 1024px) { .step-item:not(:last-child)::after { display: block; } }
