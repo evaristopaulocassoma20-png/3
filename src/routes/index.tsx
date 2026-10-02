@@ -100,7 +100,7 @@ function EventProPage() {
           <nav className="hidden items-center gap-8 text-sm font-medium lg:flex" aria-label="Navegação principal">
             <a className="nav-link active" href="#inicio">Início</a>
             <Link className="nav-link" to="/funcionalidades">Funcionalidades</Link>
-            <a className="nav-link" href="#como-funciona">Planos</a>
+            <Link className="nav-link" to="/planos">Planos</Link>
             <a className="nav-link" href="#eventos">Exemplos</a>
             <a className="nav-link" href="#sobre">Sobre</a>
             <a className="nav-link" href="#contacto">Contacto</a>
