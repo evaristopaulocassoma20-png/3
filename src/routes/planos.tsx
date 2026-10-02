@@ -194,7 +194,7 @@ function PlanosPage() {
             <Link className="nav-link" to="/funcionalidades">Funcionalidades</Link>
             <span className="nav-link active">Planos</span>
             <a className="nav-link" href="/#eventos">Exemplos</a>
-            <a className="nav-link" href="/#sobre">Sobre</a>
+            <Link className="nav-link" to="/sobre">Sobre</Link>
             <a className="nav-link" href="/#contacto">Contactos</a>
           </nav>
           <div className="flex items-center gap-2.5">

@@ -131,7 +131,7 @@ function FuncionalidadesPage() {
             <span className="nav-link active">Funcionalidades</span>
             <Link className="nav-link" to="/planos">Planos</Link>
             <a className="nav-link" href="/#eventos">Exemplos</a>
-            <a className="nav-link" href="/#sobre">Sobre</a>
+            <Link className="nav-link" to="/sobre">Sobre</Link>
             <a className="nav-link" href="/#contacto">Contacto</a>
           </nav>
           <div className="flex items-center gap-2.5">
