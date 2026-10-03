@@ -100,7 +100,7 @@ function SobrePage() {
             <Link className="nav-link" to="/planos">Planos</Link>
             <a className="nav-link" href="/#eventos">Exemplos</a>
             <span className="nav-link active">Sobre</span>
-            <a className="nav-link" href="#contacto">Contactos</a>
+            <Link className="nav-link" to="/contactos">Contactos</Link>
           </nav>
           <div className="flex items-center gap-2.5">
             <a href="#contacto" className="btn-outline hidden sm:inline-flex">Entrar</a>
