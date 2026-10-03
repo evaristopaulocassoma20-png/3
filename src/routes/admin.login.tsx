@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Lock, Mail, ShieldCheck } from "lucide-react";
+import { findOrgLogin, setSession } from "@/lib/demo-store";
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({
@@ -28,10 +29,17 @@ function AdminLogin() {
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (email.trim().toLowerCase() === DEMO_EMAIL && pass === DEMO_PASS) {
-      sessionStorage.setItem("ep_admin", "1");
+    const em = email.trim().toLowerCase();
+    if (em === DEMO_EMAIL && pass === DEMO_PASS) {
+      setSession({ role: "super" });
       navigate({ to: "/admin/dashboard" });
-    } else setError("E-mail ou senha incorretos.");
+      return;
+    }
+    const org = findOrgLogin(em, pass);
+    if (!org) return setError("E-mail ou senha incorretos.");
+    if (org.status === "Suspenso") return setError("Esta empresa está suspensa. Contacte o suporte.");
+    setSession({ role: "empresa", orgId: org.id });
+    navigate({ to: "/empresa/dashboard" });
   }
 
   return (
@@ -41,9 +49,9 @@ function AdminLogin() {
           <span className="brand-mark"><span /><span /><span /></span>
           <div><p className="text-xl font-extrabold">EventPro</p><p className="text-xs text-muted-foreground">SISTEMA</p></div>
         </Link>
-        <span className="inline-flex items-center gap-1 rounded border border-primary/60 px-2 py-0.5 text-xs font-bold text-primary"><ShieldCheck size={14}/> SUPER ADMIN</span>
+        <span className="inline-flex items-center gap-1 rounded border border-primary/60 px-2 py-0.5 text-xs font-bold text-primary"><ShieldCheck size={14}/> SUPER ADMIN · ADMIN DA EMPRESA</span>
         <h1 className="mt-4 text-2xl font-bold">Entrar no painel</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Gerir organizações e administradores das empresas.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Super admin e administradores das empresas entram aqui.</p>
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <label className="block text-sm">E-mail
             <div className="mt-1 flex items-center gap-2 rounded-md border border-border bg-input px-3">
