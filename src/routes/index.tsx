@@ -101,7 +101,7 @@ function EventProPage() {
             <a className="nav-link active" href="#inicio">Início</a>
             <Link className="nav-link" to="/funcionalidades">Funcionalidades</Link>
             <Link className="nav-link" to="/planos">Planos</Link>
-            <a className="nav-link" href="#eventos">Exemplos</a>
+            <Link className="nav-link" to="/exemplos">Exemplos</Link>
             <Link className="nav-link" to="/sobre">Sobre</Link>
             <Link className="nav-link" to="/contactos">Contactos</Link>
           </nav>

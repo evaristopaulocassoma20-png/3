@@ -98,7 +98,7 @@ function SobrePage() {
             <Link className="nav-link" to="/">Início</Link>
             <Link className="nav-link" to="/funcionalidades">Funcionalidades</Link>
             <Link className="nav-link" to="/planos">Planos</Link>
-            <a className="nav-link" href="/#eventos">Exemplos</a>
+            <Link className="nav-link" to="/exemplos">Exemplos</Link>
             <span className="nav-link active">Sobre</span>
             <Link className="nav-link" to="/contactos">Contactos</Link>
           </nav>
@@ -251,7 +251,7 @@ function SobrePage() {
         <div className="site-container grid gap-10 py-12 md:grid-cols-[1.5fr_1fr_1fr_1fr]">
           <Link to="/" className="flex items-start gap-3"><BrandMark /><span><span className="block text-xl font-extrabold">Event<span className="text-primary">Pro</span></span><span className="block text-[0.56rem] text-muted-foreground">Eventos que conectam pessoas e negócios</span></span></Link>
           <div className="text-xs text-copy"><strong className="text-foreground">Links rápidos</strong>
-            <div className="mt-3 flex flex-col gap-1.5"><Link to="/">Início</Link><Link to="/funcionalidades">Funcionalidades</Link><Link to="/planos">Planos</Link><a href="/#eventos">Exemplos</a><Link to="/sobre">Sobre</Link></div></div>
+            <div className="mt-3 flex flex-col gap-1.5"><Link to="/">Início</Link><Link to="/funcionalidades">Funcionalidades</Link><Link to="/planos">Planos</Link><Link to="/exemplos">Exemplos</Link><Link to="/sobre">Sobre</Link></div></div>
           <div className="text-xs text-copy"><strong className="text-foreground">Suporte</strong>
             <div className="mt-3 flex flex-col gap-1.5"><a href="mailto:ola@eventpro.ao">Central de Ajuda</a><a href="#">Termos de Uso</a><a href="#">Política de Privacidade</a><a href="mailto:ola@eventpro.ao">Fale Conosco</a></div></div>
           <div className="text-xs text-copy"><strong className="text-foreground">Siga-nos</strong>

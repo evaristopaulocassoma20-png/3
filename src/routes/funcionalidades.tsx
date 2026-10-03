@@ -130,7 +130,7 @@ function FuncionalidadesPage() {
             <Link className="nav-link" to="/">Início</Link>
             <span className="nav-link active">Funcionalidades</span>
             <Link className="nav-link" to="/planos">Planos</Link>
-            <a className="nav-link" href="/#eventos">Exemplos</a>
+            <Link className="nav-link" to="/exemplos">Exemplos</Link>
             <Link className="nav-link" to="/sobre">Sobre</Link>
             <Link className="nav-link" to="/contactos">Contactos</Link>
           </nav>
