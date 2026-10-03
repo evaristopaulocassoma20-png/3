@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ContactosRouteImport } from './routes/contactos'
 import { Route as FuncionalidadesRouteImport } from './routes/funcionalidades'
 import { Route as PlanosRouteImport } from './routes/planos'
 import { Route as SobreRouteImport } from './routes/sobre'
@@ -17,6 +18,11 @@ import { Route as SobreRouteImport } from './routes/sobre'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactosRoute = ContactosRouteImport.update({
+  id: '/contactos',
+  path: '/contactos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FuncionalidadesRoute = FuncionalidadesRouteImport.update({
@@ -37,12 +43,14 @@ const SobreRoute = SobreRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/contactos': typeof ContactosRoute
   '/funcionalidades': typeof FuncionalidadesRoute
   '/planos': typeof PlanosRoute
   '/sobre': typeof SobreRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contactos': typeof ContactosRoute
   '/funcionalidades': typeof FuncionalidadesRoute
   '/planos': typeof PlanosRoute
   '/sobre': typeof SobreRoute
@@ -50,20 +58,23 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/contactos': typeof ContactosRoute
   '/funcionalidades': typeof FuncionalidadesRoute
   '/planos': typeof PlanosRoute
   '/sobre': typeof SobreRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/funcionalidades' | '/planos' | '/sobre'
+  fullPaths: '/' | '/contactos' | '/funcionalidades' | '/planos' | '/sobre'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/funcionalidades' | '/planos' | '/sobre'
-  id: '__root__' | '/' | '/funcionalidades' | '/planos' | '/sobre'
+  to: '/' | '/contactos' | '/funcionalidades' | '/planos' | '/sobre'
+  id:
+    '__root__' | '/' | '/contactos' | '/funcionalidades' | '/planos' | '/sobre'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ContactosRoute: typeof ContactosRoute
   FuncionalidadesRoute: typeof FuncionalidadesRoute
   PlanosRoute: typeof PlanosRoute
   SobreRoute: typeof SobreRoute
@@ -76,6 +87,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contactos': {
+      id: '/contactos'
+      path: '/contactos'
+      fullPath: '/contactos'
+      preLoaderRoute: typeof ContactosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/funcionalidades': {
@@ -104,6 +122,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ContactosRoute: ContactosRoute,
   FuncionalidadesRoute: FuncionalidadesRoute,
   PlanosRoute: PlanosRoute,
   SobreRoute: SobreRoute,
