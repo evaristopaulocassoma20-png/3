@@ -3,15 +3,16 @@ import { useEffect, useState } from "react";
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import {
   LayoutDashboard, Building2, CalendarDays, Receipt, Users, Tag, Settings, Activity, FileText,
-  Search, Bell, Mail, TrendingUp, CreditCard, QrCode, ChevronRight, LogOut, Plus, X, MessageCircle, Send,
+  Search, Bell, Mail, TrendingUp, CreditCard, QrCode, ChevronRight, LogOut, Plus, X, Pencil, Trash2, Ban, CheckCircle2, RotateCcw,
 } from "lucide-react";
+import { useDB, update, getSession, setSession, uid, resetDemo, type Org, type Evento } from "@/lib/demo-store";
 
 export const Route = createFileRoute("/admin/dashboard")({
   ssr: false,
   head: () => ({
     meta: [
       { title: "Dashboard Global — Super Admin EventPro" },
-      { name: "description", content: "Painel global do sistema EventPro: organizações, assinaturas e saúde do sistema." },
+      { name: "description", content: "Painel global do sistema EventPro: organizações, eventos, faturação e auditoria." },
       { property: "og:title", content: "Dashboard Global — Super Admin EventPro" },
       { property: "og:description", content: "Painel global do sistema EventPro." },
       { property: "og:type", content: "website" },
@@ -26,140 +27,192 @@ const nav = [
   [Receipt, "Faturamento Global"], [Users, "Usuários & Permissões"], [Tag, "Planos & Preços"],
   [Settings, "Configurações Globais"], [Activity, "Monitoramento do Sistema"], [FileText, "Registros de Auditoria"],
 ] as const;
+type Sec = (typeof nav)[number][1];
 
 const growth = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"].map((m,i)=>({m,v:[1000,1500,2100,3200,2300,4100,5000,4200,4800,4000,4700,5500][i]}));
 const latency = Array.from({length:60},(_,i)=>({i,v:Math.round(80+Math.sin(i/3)*25+((i*37)%40))}));
-const cities = [{n:"Luanda",x:28,y:35,s:22},{n:"Benguela",x:30,y:60,s:14},{n:"Lubango",x:35,y:78,s:12},{n:"Cabinda",x:22,y:10,s:10},{n:"Huambo",x:48,y:58,s:12},{n:"Malanje",x:55,y:40,s:10},{n:"Uíge",x:42,y:22,s:9},{n:"Namibe",x:25,y:85,s:8},{n:"Moxico",x:72,y:55,s:9}];
-
-type Org = { nome: string; admin: string; email: string; plano: string; data: string; status: "Confirmado" | "Pendente" };
-const initialOrgs: Org[] = [
-  { nome: "Kianda Eventos", admin: "Ana Lopes", email: "ana@kianda.ao", plano: "Profissional", data: "20/04/2026", status: "Confirmado" },
-  { nome: "Evento Globais", admin: "Paulo Sousa", email: "paulo@globais.ao", plano: "Básico", data: "20/04/2026", status: "Confirmado" },
-  { nome: "Aura Angola", admin: "Marta Neto", email: "marta@aura.ao", plano: "Enterprise", data: "20/06/2026", status: "Confirmado" },
-  { nome: "Evento Angola", admin: "João Dias", email: "joao@eventoangola.ao", plano: "SaaS", data: "20/04/2026", status: "Pendente" },
-  { nome: "Event Amigo", admin: "Rita Costa", email: "rita@amigo.ao", plano: "Profissional", data: "20/06/2026", status: "Pendente" },
-];
-
+const precos: Record<string, number> = { Básico: 15000, Profissional: 45000, Enterprise: 120000, SaaS: 75000 };
 const card = "rounded-lg border border-border bg-card";
+const inp = "mt-1 h-10 w-full rounded-md border border-border bg-input px-3 text-sm outline-none";
+const btn = "flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground";
+const ok = { color: "oklch(0.78 0.18 150)", borderColor: "oklch(0.78 0.18 150 / 50%)" };
+const warn = { color: "oklch(0.82 0.16 85)", borderColor: "oklch(0.82 0.16 85 / 50%)" };
+const bad = { color: "oklch(0.7 0.2 25)", borderColor: "oklch(0.7 0.2 25 / 50%)" };
+const Badge = ({ s }: { s: string }) => <span className="rounded border px-2 py-0.5 text-xs" style={["Confirmado","Ativo"].includes(s)?ok:["Suspenso","Encerrado"].includes(s)?bad:warn}>{s}</span>;
 
 function Dashboard() {
   const navigate = useNavigate();
-  const [ok, setOk] = useState(false);
-  const [orgs, setOrgs] = useState(initialOrgs);
-  const [open, setOpen] = useState(false);
-  const [chat, setChat] = useState(true);
+  const db = useDB();
+  const [allowed, setAllowed] = useState(false);
+  const [sec, setSec] = useState<Sec>("Dashboard Global");
+  const [q, setQ] = useState("");
+  const [editOrg, setEditOrg] = useState<Org | "new" | null>(null);
+  const [editEv, setEditEv] = useState<{ orgId: string; ev: Evento } | null>(null);
 
   useEffect(() => {
-    if (sessionStorage.getItem("ep_admin") !== "1") navigate({ to: "/admin/login" });
-    else setOk(true);
+    if (getSession()?.role !== "super") navigate({ to: "/admin/login" });
+    else setAllowed(true);
   }, [navigate]);
-  if (!ok) return null;
+  if (!allowed || !db) return null;
+
+  const orgs = db.orgs.filter(o => (o.nome + o.admin + o.email).toLowerCase().includes(q.toLowerCase()));
+  const eventos = db.orgs.flatMap(o => o.eventos.map(e => ({ org: o, ev: e })));
+  const totalPart = eventos.reduce((s, x) => s + x.ev.participantes.length, 0);
+  const mrr = db.orgs.filter(o => o.status === "Confirmado").reduce((s, o) => s + (precos[o.plano] ?? 0), 0);
+  const L = "Super Admin";
+
+  const acessar = (o: Org) => { setSession({ role: "empresa", orgId: o.id, viaSuper: true }); update(L, `Acedeu ao painel de ${o.nome}`, () => {}); navigate({ to: "/empresa/dashboard" }); };
+  const setStatus = (o: Org, status: Org["status"]) => update(L, `${status === "Suspenso" ? "Suspendeu" : "Ativou"} ${o.nome}`, d => { d.orgs.find(x => x.id === o.id)!.status = status; });
+  const delOrg = (o: Org) => confirm(`Eliminar ${o.nome}?`) && update(L, `Eliminou ${o.nome}`, d => { d.orgs = d.orgs.filter(x => x.id !== o.id); });
+
+  const OrgTable = ({ list }: { list: Org[] }) => (
+    <table className="w-full min-w-[760px] text-sm">
+      <thead className="bg-secondary text-left text-xs text-muted-foreground"><tr><th className="p-3">Organização</th><th>Admin</th><th>Plano</th><th>Eventos</th><th>Status</th><th className="pr-3 text-right">Ações</th></tr></thead>
+      <tbody>{list.map(o => (
+        <tr key={o.id} className="border-t border-border">
+          <td className="p-3">{o.nome}<p className="text-xs text-muted-foreground">desde {o.data}</p></td>
+          <td><p>{o.admin}</p><p className="text-xs text-muted-foreground">{o.email}</p></td>
+          <td>{o.plano}</td><td>{o.eventos.length}</td><td><Badge s={o.status}/></td>
+          <td className="pr-3"><div className="flex items-center justify-end gap-2">
+            <button title="Editar" onClick={() => setEditOrg(o)} className="text-muted-foreground hover:text-foreground"><Pencil size={15}/></button>
+            {o.status === "Suspenso"
+              ? <button title="Ativar" onClick={() => setStatus(o, "Confirmado")} style={ok}><CheckCircle2 size={15}/></button>
+              : <button title="Suspender" onClick={() => setStatus(o, "Suspenso")} style={warn}><Ban size={15}/></button>}
+            {o.status === "Pendente" && <button onClick={() => setStatus(o, "Confirmado")} className="text-xs" style={ok}>Aprovar</button>}
+            <button title="Eliminar" onClick={() => delOrg(o)} style={bad}><Trash2 size={15}/></button>
+            <button onClick={() => acessar(o)} className="flex items-center text-accent">Acessar como <ChevronRight size={14}/></button>
+          </div></td>
+        </tr>))}
+        {list.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Nenhuma organização.</td></tr>}
+      </tbody>
+    </table>
+  );
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="flex h-16 items-center gap-4 border-b border-border px-4">
         <div className="flex items-center gap-3"><span className="brand-mark"><span/><span/><span/></span><div><p className="font-extrabold leading-none">EventPro</p><p className="text-[10px] text-muted-foreground">SISTEMA</p></div></div>
         <span className="hidden rounded border border-primary/60 px-2 py-0.5 text-xs font-bold text-primary sm:inline">SUPER ADMIN</span>
-        <div className="ml-auto hidden items-center gap-2 rounded-md border border-border bg-input px-3 md:flex"><Search size={15} className="text-muted-foreground"/><input placeholder="Pesquisar" className="h-9 bg-transparent text-sm outline-none"/></div>
+        <div className="ml-auto hidden items-center gap-2 rounded-md border border-border bg-input px-3 md:flex"><Search size={15} className="text-muted-foreground"/><input value={q} onChange={e=>{setQ(e.target.value); if (sec==="Dashboard Global") setSec("Organizações");}} placeholder="Pesquisar organizações" className="h-9 bg-transparent text-sm outline-none"/></div>
         <Mail size={18} className="text-muted-foreground"/>
-        <div className="relative"><Bell size={18} className="text-muted-foreground"/><span className="absolute -right-1 -top-1 h-2 w-2 rounded-full" style={{background:"oklch(0.65 0.22 25)"}}/></div>
-        <button onClick={()=>{sessionStorage.removeItem("ep_admin");navigate({to:"/admin/login",replace:true});}} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><LogOut size={16}/> Sair</button>
+        <div className="relative"><Bell size={18} className="text-muted-foreground"/>{db.logs.length>0&&<span className="absolute -right-1 -top-1 h-2 w-2 rounded-full" style={{background:"oklch(0.65 0.22 25)"}}/>}</div>
+        <button onClick={()=>{setSession(null);navigate({to:"/admin/login",replace:true});}} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><LogOut size={16}/> Sair</button>
       </header>
       <div className="flex">
         <aside className="hidden w-60 shrink-0 border-r border-border p-3 lg:block">
-          {nav.map(([I,l],i)=>(
-            <button key={l} className={`mb-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm ${i===0?"bg-primary/20 text-foreground":"text-copy hover:bg-secondary"}`}><I size={16}/>{l}</button>
+          {nav.map(([I,l])=>(
+            <button key={l} onClick={()=>setSec(l)} className={`mb-1 flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm ${sec===l?"bg-primary/20 text-foreground":"text-copy hover:bg-secondary"}`}><I size={16}/>{l}</button>
           ))}
         </aside>
         <main className="min-w-0 flex-1 space-y-5 p-4 md:p-6">
+          <select value={sec} onChange={e=>setSec(e.target.value as Sec)} className={`${inp} lg:hidden`}>{nav.map(([,l])=><option key={l}>{l}</option>)}</select>
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold">Dashboard Global</h1>
-            <button onClick={()=>setOpen(true)} className="ml-auto flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"><Plus size={16}/> Cadastrar admin de empresa</button>
+            <h1 className="text-2xl font-bold">{sec}</h1>
+            <button onClick={()=>setEditOrg("new")} className={`${btn} ml-auto`}><Plus size={16}/> Cadastrar admin de empresa</button>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {[["Assinaturas Ativas","4,875","Tendência de assinaturas ativas"],["MRR (Receita Mensal)","75.000.000 Kz","Crescimento +5%"],["Total de Eventos Ativos","2,150","Em todos os clientes"],["Participantes Totais","1,245,000","Global"]].map(([t,v,s],i)=>(
-              <div key={t} className={`${card} p-4`}><p className="text-sm font-semibold">{t}</p><p className="mt-1 flex items-center gap-2 text-2xl font-extrabold">{v}{i===0&&<TrendingUp size={18} className="text-accent"/>}</p><p className={`mt-1 text-xs ${i===1?"text-accent":"text-muted-foreground"}`}>{s}</p></div>
-            ))}
-          </div>
-
-          <div className="grid gap-4 xl:grid-cols-2">
-            <div className={`${card} overflow-hidden`}>
-              <div className="p-4"><h2 className="font-bold">Cidades Mais Ativas</h2><p className="text-xs text-muted-foreground">Pontos com mais eventos ativos</p></div>
-              <div className="relative h-72 bg-secondary/60">
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="absolute inset-0 h-full w-full opacity-40"><path d="M20 5 L45 8 L60 25 L85 35 L88 70 L70 95 L25 95 L18 70 L25 45 L15 25 Z" fill="none" stroke="var(--accent)" strokeWidth=".4"/><path d="M25 45 L60 45 M45 8 L50 95 M18 70 L88 70" stroke="var(--border)" strokeWidth=".3"/></svg>
-                {cities.map(c=>(<span key={c.n} title={c.n} className="absolute rounded-full" style={{left:`${c.x}%`,top:`${c.y}%`,width:c.s,height:c.s,background:"oklch(0.75 0.18 55)",boxShadow:"0 0 18px 4px oklch(0.75 0.18 55 / 60%)"}}/>))}
-                <div className="absolute bottom-3 left-3 rounded-md border border-border bg-background/90 p-3 text-xs"><p className="mb-1 font-bold">Cidades Mais Ativas</p>{["Luanda","Benguela","Lubango","Cabinda"].map(c=><p key={c}>• {c}</p>)}</div>
-              </div>
+          {sec === "Dashboard Global" && <>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {[["Organizações", String(db.orgs.length), `${db.orgs.filter(o=>o.status==="Pendente").length} pendentes`],["MRR (Receita Mensal)", mrr.toLocaleString("pt-PT")+" Kz","Assinaturas confirmadas"],["Eventos Ativos", String(eventos.filter(x=>x.ev.status==="Ativo").length),"Em todos os clientes"],["Participantes Totais", String(totalPart),"Global"]].map(([t,v,s],i)=>(
+                <div key={t} className={`${card} p-4`}><p className="text-sm font-semibold">{t}</p><p className="mt-1 flex items-center gap-2 text-2xl font-extrabold">{v}{i===0&&<TrendingUp size={18} className="text-accent"/>}</p><p className="mt-1 text-xs text-muted-foreground">{s}</p></div>
+              ))}
             </div>
             <div className={`${card} p-4`}>
-              <h2 className="font-bold">Crescimento de Assinaturas</h2><p className="text-xs text-muted-foreground">Últimos 12 meses</p>
-              <div className="mt-3 h-72"><ResponsiveContainer><AreaChart data={growth}><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--primary)" stopOpacity={.7}/><stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/></linearGradient></defs><CartesianGrid stroke="var(--border)" vertical={false}/><XAxis dataKey="m" stroke="var(--muted-foreground)" fontSize={11}/><YAxis stroke="var(--muted-foreground)" fontSize={11}/><Tooltip contentStyle={{background:"var(--background)",border:"1px solid var(--border)"}}/><Area dataKey="v" stroke="var(--accent)" fill="url(#g)" strokeWidth={2}/></AreaChart></ResponsiveContainer></div>
+              <h2 className="font-bold">Crescimento de Assinaturas</h2><p className="text-xs text-muted-foreground">Últimos 12 meses (exemplo)</p>
+              <div className="mt-3 h-64"><ResponsiveContainer><AreaChart data={growth}><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--primary)" stopOpacity={.7}/><stop offset="100%" stopColor="var(--primary)" stopOpacity={0}/></linearGradient></defs><CartesianGrid stroke="var(--border)" vertical={false}/><XAxis dataKey="m" stroke="var(--muted-foreground)" fontSize={11}/><YAxis stroke="var(--muted-foreground)" fontSize={11}/><Tooltip contentStyle={{background:"var(--background)",border:"1px solid var(--border)"}}/><Area dataKey="v" stroke="var(--accent)" fill="url(#g)" strokeWidth={2}/></AreaChart></ResponsiveContainer></div>
             </div>
-          </div>
+            <div className={`${card} overflow-x-auto`}><h2 className="p-4 font-bold">Últimas Organizações Cadastradas</h2><OrgTable list={db.orgs.slice(0,5)}/></div>
+            <div className={`${card} p-4`}><h2 className="mb-3 font-bold">Atividade recente das empresas</h2><Logs logs={db.logs.slice(0,6)}/></div>
+          </>}
 
-          <div className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-            <div className={`${card} overflow-x-auto`}>
-              <h2 className="p-4 font-bold">Últimas Organizações Cadastradas</h2>
-              <table className="w-full min-w-[620px] text-sm">
-                <thead className="bg-secondary text-left text-xs text-muted-foreground"><tr><th className="p-3">Organização</th><th>Admin</th><th>Plano</th><th>Data</th><th>Status</th><th/></tr></thead>
-                <tbody>{orgs.map(o=>(<tr key={o.email} className="border-t border-border"><td className="p-3">{o.nome}</td><td><p>{o.admin}</p><p className="text-xs text-muted-foreground">{o.email}</p></td><td>{o.plano}</td><td>{o.data}</td><td><span className="rounded border px-2 py-0.5 text-xs" style={o.status==="Confirmado"?{color:"oklch(0.78 0.18 150)",borderColor:"oklch(0.78 0.18 150 / 50%)"}:{color:"oklch(0.82 0.16 85)",borderColor:"oklch(0.82 0.16 85 / 50%)"}}>{o.status}</span></td><td className="pr-3"><button className="flex items-center text-accent">Acessar como <ChevronRight size={14}/></button></td></tr>))}</tbody>
-              </table>
-            </div>
-            <div className={`${card} overflow-x-auto`}>
-              <h2 className="p-4 font-bold">Faturamento Recente (SaaS)</h2>
-              <table className="w-full text-sm"><thead className="bg-secondary text-left text-xs text-muted-foreground"><tr><th className="p-3">Valor</th><th>Fatura</th><th className="pr-3 text-right">Taxa</th></tr></thead>
-              <tbody>{[1,2,3,4,5].map(n=>(<tr key={n} className="border-t border-border"><td className="p-3">75.000.000 Kz</td><td>Fatura {n}</td><td className="pr-3 text-right">{n%2?"3.000":"5.000"} Kz</td></tr>))}</tbody></table>
-            </div>
-          </div>
+          {sec === "Organizações" && <div className={`${card} overflow-x-auto`}><OrgTable list={orgs}/></div>}
 
-          <div className={`${card} p-4`}>
-            <h2 className="font-bold">Saúde do Sistema</h2><p className="text-xs text-muted-foreground">Monitorização em tempo real dos serviços globais.</p>
-            <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              <div className="rounded-md border border-border p-3"><div className="flex justify-between text-sm"><span>Latência da API</span><span className="font-bold" style={{color:"oklch(0.78 0.18 150)"}}>● OPERACIONAL</span></div><div className="h-36"><ResponsiveContainer><AreaChart data={latency}><Area dataKey="v" stroke="var(--accent)" fill="var(--primary)" fillOpacity={.25}/><YAxis stroke="var(--muted-foreground)" fontSize={10}/></AreaChart></ResponsiveContainer></div></div>
+          {sec === "Eventos Globais" && <div className={`${card} overflow-x-auto`}>
+            <table className="w-full min-w-[720px] text-sm"><thead className="bg-secondary text-left text-xs text-muted-foreground"><tr><th className="p-3">Evento</th><th>Organização</th><th>Data</th><th>Participantes</th><th>Status</th><th className="pr-3 text-right">Ações</th></tr></thead>
+            <tbody>{eventos.map(({org,ev})=>(<tr key={ev.id} className="border-t border-border"><td className="p-3">{ev.nome}<p className="text-xs text-muted-foreground">{ev.local}</p></td><td>{org.nome}</td><td>{ev.data}</td><td>{ev.participantes.length}</td><td><Badge s={ev.status}/></td>
+              <td className="pr-3"><div className="flex justify-end gap-3"><button onClick={()=>setEditEv({orgId:org.id,ev})}><Pencil size={15}/></button><button style={bad} onClick={()=>confirm(`Eliminar ${ev.nome}?`)&&update(L,`Eliminou o evento ${ev.nome} (${org.nome})`,d=>{const o=d.orgs.find(x=>x.id===org.id)!;o.eventos=o.eventos.filter(e=>e.id!==ev.id);})}><Trash2 size={15}/></button><button className="text-accent" onClick={()=>acessar(org)}>Abrir</button></div></td></tr>))}</tbody></table>
+          </div>}
+
+          {sec === "Faturamento Global" && <div className={`${card} overflow-x-auto`}>
+            <table className="w-full text-sm"><thead className="bg-secondary text-left text-xs text-muted-foreground"><tr><th className="p-3">Fatura</th><th>Organização</th><th>Plano</th><th className="pr-3 text-right">Valor mensal</th></tr></thead>
+            <tbody>{db.orgs.map((o,i)=>(<tr key={o.id} className="border-t border-border"><td className="p-3">FT-2026/{100+i}</td><td>{o.nome}</td><td>{o.plano}</td><td className="pr-3 text-right">{(precos[o.plano]??0).toLocaleString("pt-PT")} Kz</td></tr>))}
+            <tr className="border-t border-border font-bold"><td className="p-3" colSpan={3}>Total (confirmadas)</td><td className="pr-3 text-right">{mrr.toLocaleString("pt-PT")} Kz</td></tr></tbody></table>
+          </div>}
+
+          {sec === "Usuários & Permissões" && <div className={`${card} overflow-x-auto`}>
+            <table className="w-full text-sm"><thead className="bg-secondary text-left text-xs text-muted-foreground"><tr><th className="p-3">Nome</th><th>E-mail</th><th>Cargo</th><th>Empresa</th><th/></tr></thead>
+            <tbody><tr className="border-t border-border"><td className="p-3">Evaristo Cassoma</td><td>—</td><td>Super Admin</td><td>EventPro</td><td/></tr>
+            {db.orgs.map(o=>(<tr key={o.id} className="border-t border-border"><td className="p-3">{o.admin}</td><td>{o.email}</td><td>Admin da Empresa</td><td>{o.nome}</td><td className="pr-3 text-right"><button onClick={()=>{const s=prompt(`Nova senha para ${o.admin}`);if(s&&s.length>=4)update(L,`Redefiniu a senha de ${o.admin}`,d=>{d.orgs.find(x=>x.id===o.id)!.senha=s;});}} className="text-accent">Redefinir senha</button></td></tr>))}</tbody></table>
+          </div>}
+
+          {sec === "Planos & Preços" && <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{Object.entries(precos).map(([p,v])=>(<div key={p} className={`${card} p-5`}><p className="font-bold">{p}</p><p className="mt-2 text-2xl font-extrabold">{v.toLocaleString("pt-PT")} Kz<span className="text-sm font-normal text-muted-foreground">/mês</span></p><p className="mt-2 text-sm text-muted-foreground">{db.orgs.filter(o=>o.plano===p).length} empresas</p></div>))}</div>}
+
+          {sec === "Configurações Globais" && <div className={`${card} max-w-xl space-y-4 p-5`}>
+            {["Permitir novos cadastros de empresas","Aprovação manual de empresas","Notificar por e-mail novas inscrições","Modo de manutenção"].map((t,i)=>(<label key={t} className="flex items-center justify-between text-sm">{t}<input type="checkbox" defaultChecked={i<3} className="h-4 w-4 accent-[var(--primary)]"/></label>))}
+            <button onClick={()=>confirm("Repor todos os dados de demonstração?")&&resetDemo()} className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm"><RotateCcw size={15}/> Repor dados de demonstração</button>
+          </div>}
+
+          {sec === "Monitoramento do Sistema" && <div className={`${card} p-4`}>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-md border border-border p-3"><div className="flex justify-between text-sm"><span>Latência da API</span><span className="font-bold" style={ok}>● OPERACIONAL</span></div><div className="h-36"><ResponsiveContainer><AreaChart data={latency}><Area dataKey="v" stroke="var(--accent)" fill="var(--primary)" fillOpacity={.25}/><YAxis stroke="var(--muted-foreground)" fontSize={10}/></AreaChart></ResponsiveContainer></div></div>
               <div className="divide-y divide-border rounded-md border border-border">
-                {[[CreditCard,"Processamento de Pagamentos","OPERACIONAL"],[Mail,"Envio de E-mail/SMS","SAUDÁVEL"],[QrCode,"Gerador de Ingressos/QR Code","SAUDÁVEL"]].map(([I,t,s]:any)=>(<div key={t} className="flex items-center gap-3 p-4 text-sm"><I size={18} className="text-accent"/>{t}<span className="ml-auto font-bold" style={{color:"oklch(0.78 0.18 150)"}}>● {s}</span></div>))}
+                {([[CreditCard,"Processamento de Pagamentos"],[Mail,"Envio de E-mail/SMS"],[QrCode,"Gerador de Ingressos/QR Code"]] as const).map(([I,t])=>(<div key={t} className="flex items-center gap-3 p-4 text-sm"><I size={18} className="text-accent"/>{t}<span className="ml-auto font-bold" style={ok}>● SAUDÁVEL</span></div>))}
               </div>
             </div>
-          </div>
+          </div>}
 
-          <div className={`${card} p-4`}>
-            <h2 className="font-bold">Suporte & Tíquetes do Cliente</h2><p className="text-xs text-muted-foreground">Tíquetes recentes dos administradores.</p>
-            <table className="mt-3 w-full text-sm"><thead className="bg-secondary text-left text-xs text-muted-foreground"><tr><th className="p-3">#</th><th>Nome</th><th className="text-right pr-3">Tíquete Nº</th></tr></thead>
-            <tbody>{["Damião Nunes","Danilo Monteiro","Beatriz Mamona","Domingos Neves","Daniela Mateus"].map((n,i)=>(<tr key={n} className="border-t border-border"><td className="p-3 text-accent">{i+1}</td><td><p>{n}</p><p className="text-xs text-muted-foreground">Problema com acesso ao painel da organização</p></td><td className="pr-3 text-right text-accent">10{35310+i*17}</td></tr>))}</tbody></table>
-          </div>
+          {sec === "Registros de Auditoria" && <div className={`${card} p-4`}><Logs logs={db.logs}/></div>}
         </main>
       </div>
 
-      {chat ? (
-        <div className="fixed bottom-4 right-4 z-40 w-72 overflow-hidden rounded-lg border border-border bg-background shadow-2xl">
-          <div className="flex items-center justify-between bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Suporte Interno / Devs<button onClick={()=>setChat(false)}><X size={16}/></button></div>
-          <div className="space-y-2 p-3 text-xs"><p className="ml-auto w-fit rounded bg-primary px-2 py-1 text-primary-foreground">Olá</p><p className="w-fit rounded bg-secondary px-2 py-1">Como podemos ajudar hoje?</p></div>
-          <div className="flex gap-2 border-t border-border p-2"><input placeholder="Escreva mensagem..." className="flex-1 rounded bg-input px-2 text-xs outline-none"/><button className="rounded bg-primary p-1.5 text-primary-foreground"><Send size={14}/></button></div>
-        </div>
-      ) : (
-        <button onClick={()=>setChat(true)} className="fixed bottom-4 right-4 z-40 rounded-full bg-primary p-3 text-primary-foreground"><MessageCircle size={20}/></button>
-      )}
-
-      {open && <NewAdmin onClose={()=>setOpen(false)} onSave={o=>{setOrgs([o,...orgs]);setOpen(false);}}/>}
+      {editOrg && <OrgForm org={editOrg==="new"?null:editOrg} onClose={()=>setEditOrg(null)}/>}
+      {editEv && <EventForm orgId={editEv.orgId} ev={editEv.ev} quem={L} onClose={()=>setEditEv(null)}/>}
     </div>
   );
 }
 
-function NewAdmin({ onClose, onSave }: { onClose: () => void; onSave: (o: Org) => void }) {
-  const [f, setF] = useState({ nome: "", admin: "", email: "", senha: "", plano: "Básico" });
+function Logs({ logs }: { logs: { id: string; quando: string; quem: string; acao: string }[] }) {
+  if (!logs.length) return <p className="text-sm text-muted-foreground">Ainda não há registos.</p>;
+  return <ul className="divide-y divide-border text-sm">{logs.map(l=>(<li key={l.id} className="flex flex-wrap gap-2 py-2"><span className="text-xs text-muted-foreground">{l.quando}</span><span className="font-semibold text-accent">{l.quem}</span><span>{l.acao}</span></li>))}</ul>;
+}
+
+function OrgForm({ org, onClose }: { org: Org | null; onClose: () => void }) {
+  const [f, setF] = useState({ nome: org?.nome ?? "", admin: org?.admin ?? "", email: org?.email ?? "", senha: org?.senha ?? "", plano: org?.plano ?? "Básico" });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
-  const inp = "mt-1 h-10 w-full rounded-md border border-border bg-input px-3 text-sm outline-none";
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
-      <form onSubmit={e=>{e.preventDefault();onSave({nome:f.nome,admin:f.admin,email:f.email,plano:f.plano,data:new Date().toLocaleDateString("pt-PT"),status:"Pendente"});}} className={`${card} w-full max-w-md space-y-3 bg-background p-6`}>
-        <div className="flex items-center justify-between"><h2 className="text-lg font-bold">Cadastrar admin de empresa</h2><button type="button" onClick={onClose}><X size={18}/></button></div>
+      <form onSubmit={e=>{e.preventDefault();
+        if (org) update("Super Admin", `Editou ${f.nome}`, d => { Object.assign(d.orgs.find(x=>x.id===org.id)!, { ...f, email: f.email.toLowerCase() }); });
+        else update("Super Admin", `Cadastrou ${f.nome}`, d => { d.orgs.unshift({ id: uid(), ...f, email: f.email.toLowerCase(), data: new Date().toLocaleDateString("pt-PT"), status: "Confirmado", eventos: [] }); });
+        onClose();}} className={`${card} w-full max-w-md space-y-3 bg-background p-6`}>
+        <div className="flex items-center justify-between"><h2 className="text-lg font-bold">{org?"Editar empresa":"Cadastrar admin de empresa"}</h2><button type="button" onClick={onClose}><X size={18}/></button></div>
         <label className="block text-sm">Nome da empresa<input required className={inp} value={f.nome} onChange={set("nome")}/></label>
         <label className="block text-sm">Nome do administrador<input required className={inp} value={f.admin} onChange={set("admin")}/></label>
-        <label className="block text-sm">E-mail<input required type="email" className={inp} value={f.email} onChange={set("email")}/></label>
-        <label className="block text-sm">Senha inicial<input required type="password" minLength={4} className={inp} value={f.senha} onChange={set("senha")}/></label>
-        <label className="block text-sm">Plano<select className={inp} value={f.plano} onChange={set("plano")}>{["Básico","Profissional","Enterprise","SaaS"].map(p=><option key={p}>{p}</option>)}</select></label>
-        <button className="h-10 w-full rounded-md bg-primary font-semibold text-primary-foreground">Cadastrar</button>
+        <label className="block text-sm">E-mail de entrada<input required type="email" className={inp} value={f.email} onChange={set("email")}/></label>
+        <label className="block text-sm">Senha<input required minLength={4} className={inp} value={f.senha} onChange={set("senha")}/></label>
+        <label className="block text-sm">Plano<select className={inp} value={f.plano} onChange={set("plano")}>{Object.keys(precos).map(p=><option key={p}>{p}</option>)}</select></label>
+        <button className="h-10 w-full rounded-md bg-primary font-semibold text-primary-foreground">{org?"Guardar alterações":"Cadastrar"}</button>
+      </form>
+    </div>
+  );
+}
+
+export function EventForm({ orgId, ev, quem, onClose }: { orgId: string; ev: Evento | null; quem: string; onClose: () => void }) {
+  const [f, setF] = useState({ nome: ev?.nome ?? "", data: ev?.data ?? "", hora: ev?.hora ?? "08:00 - 18:00", local: ev?.local ?? "", cidade: ev?.cidade ?? "Luanda, Angola", descricao: ev?.descricao ?? "", status: ev?.status ?? "Rascunho", preco: ev?.preco ?? 0 });
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: k === "preco" ? Number(e.target.value) : e.target.value });
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4">
+      <form onSubmit={e=>{e.preventDefault();
+        update(quem, `${ev?"Editou":"Criou"} o evento ${f.nome}`, d => { const o = d.orgs.find(x=>x.id===orgId)!; const data = { ...f, status: f.status as Evento["status"] };
+          if (ev) Object.assign(o.eventos.find(x=>x.id===ev.id)!, data); else o.eventos.unshift({ id: uid(), ...data, participantes: [] }); });
+        onClose();}} className={`${card} max-h-[90vh] w-full max-w-lg space-y-3 overflow-y-auto bg-background p-6`}>
+        <div className="flex items-center justify-between"><h2 className="text-lg font-bold">{ev?"Editar evento":"Criar evento"}</h2><button type="button" onClick={onClose}><X size={18}/></button></div>
+        <label className="block text-sm">Nome<input required className={inp} value={f.nome} onChange={set("nome")}/></label>
+        <div className="grid grid-cols-2 gap-3"><label className="block text-sm">Datas<input required className={inp} value={f.data} onChange={set("data")} placeholder="15 - 16 Nov 2026"/></label><label className="block text-sm">Horário<input className={inp} value={f.hora} onChange={set("hora")}/></label></div>
+        <div className="grid grid-cols-2 gap-3"><label className="block text-sm">Local<input required className={inp} value={f.local} onChange={set("local")}/></label><label className="block text-sm">Cidade<input className={inp} value={f.cidade} onChange={set("cidade")}/></label></div>
+        <label className="block text-sm">Descrição<textarea className={`${inp} h-20 py-2`} value={f.descricao} onChange={set("descricao")}/></label>
+        <div className="grid grid-cols-2 gap-3"><label className="block text-sm">Preço do bilhete (Kz)<input type="number" min={0} className={inp} value={f.preco} onChange={set("preco")}/></label><label className="block text-sm">Status<select className={inp} value={f.status} onChange={set("status")}>{["Rascunho","Ativo","Encerrado"].map(s=><option key={s}>{s}</option>)}</select></label></div>
+        <button className="h-10 w-full rounded-md bg-primary font-semibold text-primary-foreground">Guardar</button>
       </form>
     </div>
   );
