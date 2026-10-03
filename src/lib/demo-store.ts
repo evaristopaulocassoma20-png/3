@@ -22,13 +22,13 @@ const mkEvento = (nome: string, cidade = "Luanda"): Evento => ({ id: uid(), nome
 
 const seed = (): DB => ({
   logs: [],
-  orgs: [
+  orgs: ([
     ["Kianda Eventos", "Ana Lopes", "ana@kianda.ao", "Profissional", "Confirmado"],
     ["Eventos Globais", "Paulo Sousa", "paulo@globais.ao", "Básico", "Confirmado"],
     ["Aura Angola", "Marta Neto", "marta@aura.ao", "Enterprise", "Confirmado"],
     ["Evento Angola", "João Dias", "joao@eventoangola.ao", "Profissional", "Pendente"],
-  ].map(([nome, admin, email, plano, status], i) => ({
-    id: uid(), nome, admin, email, senha: "1234", plano, data: "20/04/2026", status: status as Status,
+  ] as string[][]).map(([nome, admin, email, plano, status], i) => ({
+    id: uid(), nome, admin, email, senha: "1234", plano: plano!, data: "20/04/2026", status: status as Status,
     eventos: i === 0 ? [mkEvento("Conferência de Negócios 2026"), mkEvento("Feira de Tecnologia", "Benguela")] : [mkEvento(`Gala ${nome}`, ["Luanda", "Huambo", "Lubango", "Cabinda"][i])],
   })),
 });
