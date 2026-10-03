@@ -141,7 +141,7 @@ function ExemplosPage() {
                   <p className="mt-4 flex items-center gap-2 text-xs text-copy"><CalendarDays size={14} className="text-primary" /> {e.date}</p>
                   <p className="mt-2 flex items-center gap-2 text-xs text-copy"><MapPin size={14} className="text-primary" /> {e.place}</p>
                   <div className="mt-4 flex flex-wrap gap-3 text-[0.68rem] text-copy">
-                    {e.modes.map((m) => { const I = modeIcon[m]; return <span key={m} className="flex items-center gap-1"><I size={13} className="text-primary" /> {m}</span>; })}
+                    {e.modes.map((m) => { const I = modeIcon[m] ?? Users; return <span key={m} className="flex items-center gap-1"><I size={13} className="text-primary" /> {m}</span>; })}
                   </div>
                   <a href="#" className="btn-outline mt-5 w-full text-primary">Ver exemplo <ArrowRight size={14} /></a>
                 </div>
