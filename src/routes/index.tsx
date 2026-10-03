@@ -106,7 +106,7 @@ function EventProPage() {
             <Link className="nav-link" to="/contactos">Contactos</Link>
           </nav>
           <div className="flex items-center gap-2.5">
-            <a href="#contacto" className="btn-outline hidden sm:inline-flex">Entrar</a>
+            <a href="/admin/login" className="btn-outline hidden sm:inline-flex">Entrar</a>
             <a href="#contacto" className="btn-primary">Criar Conta</a>
           </div>
         </div>
