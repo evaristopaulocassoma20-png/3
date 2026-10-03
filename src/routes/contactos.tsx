@@ -133,7 +133,7 @@ function ContactosPage() {
             <Link className="nav-link" to="/">Início</Link>
             <Link className="nav-link" to="/funcionalidades">Funcionalidades</Link>
             <Link className="nav-link" to="/planos">Planos</Link>
-            <a className="nav-link" href="/#eventos">Exemplos</a>
+            <Link className="nav-link" to="/exemplos">Exemplos</Link>
             <Link className="nav-link" to="/sobre">Sobre</Link>
             <Link className="nav-link active" to="/contactos">Contactos</Link>
           </nav>
@@ -359,7 +359,7 @@ function ContactosPage() {
               <li><Link to="/">Início</Link></li>
               <li><Link to="/funcionalidades">Funcionalidades</Link></li>
               <li><Link to="/planos">Planos</Link></li>
-              <li><a href="/#eventos">Exemplos</a></li>
+              <li><Link to="/exemplos">Exemplos</Link></li>
               <li><Link to="/sobre">Sobre</Link></li>
               <li><Link to="/contactos">Contactos</Link></li>
             </ul>

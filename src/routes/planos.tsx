@@ -193,7 +193,7 @@ function PlanosPage() {
             <Link className="nav-link" to="/">Início</Link>
             <Link className="nav-link" to="/funcionalidades">Funcionalidades</Link>
             <span className="nav-link active">Planos</span>
-            <a className="nav-link" href="/#eventos">Exemplos</a>
+            <Link className="nav-link" to="/exemplos">Exemplos</Link>
             <Link className="nav-link" to="/sobre">Sobre</Link>
             <Link className="nav-link" to="/contactos">Contactos</Link>
           </nav>
